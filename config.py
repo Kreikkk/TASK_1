@@ -1,0 +1,12 @@
+SIGNALPROCFNM = "local/ZgEWK.root"
+BGPROCFNM = "local/ZgQCD.root"
+TREENM = "TMVA_input"
+
+
+MJJ_LIM = 300
+PH_CENT = 0.6
+N_LEP = 0
+
+DEF_BINS = 50
+
+FILTER = 2

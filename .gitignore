@@ -1,0 +1,7 @@
+/venv
+/local
+*.pyc
+*.swp
+*.swo
+*.png
+*.pdf
