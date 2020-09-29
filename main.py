@@ -25,8 +25,9 @@ def assemble_DF(tree):
 							  "nJets":			pd.Series(tree["nJets"].array()),
 							  "sinDeltaPhiJJOver2": pd.Series(tree["sinDeltaPhiJJOver2"].array()),
 							  "deltaYJPh":		pd.Series(tree["deltaYJPh"].array()),
+							  "weightModified":	pd.Series(tree["weightModified"].array()),
 							  "nLeptons":		pd.Series(tree["nLeptons"].array()),
-							  "phCentrality":	pd.Series(tree["phCentrality"].array())})
+							  "phCentrality":	pd.Series(tree["phCentrality"].array()),})
 	
 	return dataframe
 
@@ -35,10 +36,12 @@ def apply_filters(dataframe, filter_id=None):
 	_len0 = len(dataframe["mJJ"])
 	if filter_id == 1:
 		dataframe = dataframe[dataframe["nLeptons"] == N_LEP]
+		dataframe = dataframe[dataframe["nJets"] > 1]
 	elif filter_id == 2:
 		dataframe = dataframe[dataframe["nLeptons"] == N_LEP]
 		dataframe = dataframe[dataframe["mJJ"] > MJJ_LIM]
 		dataframe = dataframe[dataframe["phCentrality"] < PH_CENT]
+		dataframe = dataframe[dataframe["nJets"] > 1]
 	_len1 = len(dataframe["mJJ"])
 
 	if FILTER == 1:
@@ -51,11 +54,6 @@ def apply_filters(dataframe, filter_id=None):
 	print("Dropped {} entries after filtering.\n".format(_len0-_len1))
 	
 	return dataframe.iloc[:, :-2]
-
-
-def plot(dataset, bins):
-	fig, ax = plt.subplots()
-	ax.hist(dataset, bins=bins, histtype="step" ,edgecolor="black", alpha=0.5)
 
 
 def file_read():
@@ -83,6 +81,7 @@ def setup_layout(canvas, bg_hist, signal_hist):
 	canvas.SetTicks(1, 1)					# добавляет метки на верхнюю и правую оси
 	
 	bg_hist.SetStats(False)					# убирает сводную таблицу
+	signal_hist.SetStats(False)
 	bg_hist.SetLineWidth(2)	
 	bg_hist.SetLineColor(2)
 	bg_hist.SetFillColor(2)
@@ -92,7 +91,7 @@ def setup_layout(canvas, bg_hist, signal_hist):
 	signal_hist.SetLineColor(4)
 	signal_hist.SetFillColorAlpha(4, 0.35)	# добавляет прозрачность заливки
 
-	legend=root.TLegend(0.7, 0.75, 0.87, 0.87)	# создаёт объект легенды
+	legend=root.TLegend(0.72, 0.77, 0.9, 0.9)	# создаёт объект легенды
 	legend.AddEntry(signal_hist,"Signal","f")
 	legend.AddEntry(bg_hist,"Background","f")
 
@@ -128,29 +127,43 @@ def plot(filtered_bg_data, filtered_signal_data):
 		canvas.SetTitle(key)
 		bg_hist = root.TH1F("", key, bins, xzero, xlim)
 		bg_hist.GetXaxis().SetTitle(xlabel)
-		signal_hist = root.TH1F("signal_hist", "signal_hist", bins, xzero, xlim)
+		signal_hist = root.TH1F("", key, bins, xzero, xlim)
 		
 		canvas, bg_hist, signal_hist, legend, latex = setup_layout(canvas, bg_hist, signal_hist)
 
 
-		for bg_value in bg_column:
+		for bg_value, weight in zip(bg_column, filtered_bg_data["weightModified"]):
 			bg_hist.Fill(bg_value)
-		for signl_value in signal_column:
+		for signl_value, weight in zip(signal_column, filtered_signal_data["weightModified"]):
 			signal_hist.Fill(signl_value)
 
 		if FILTER == 1:
 			text = "Z_{#gamma} region"
+
+			if key in ("mJJ", "deltaYJJ", "metPt", "subleadJetEta", "leadJetPt", "sinDeltaPhiJJOver2", "deltaYJPh"):
+				bg_hist.DrawNormalized()
+				signal_hist.DrawNormalized("same")
+			else:
+				signal_hist.DrawNormalized()
+				bg_hist.DrawNormalized("same")	
 		elif FILTER == 2:
 			text = "Signal region"
+			if key in ("mJJ", "deltaYJJ", "metPt", "photonEta", "sinDeltaPhiJJOver2", "deltaYJPh"):
+				bg_hist.DrawNormalized()
+				signal_hist.DrawNormalized("same")
+			else:
+				signal_hist.DrawNormalized()
+				bg_hist.DrawNormalized("same")	
 		else:
 			text = ""
 
-		bg_hist.Draw()
-		signal_hist.Draw("same")
+		# bg_hist.DrawNormalized()
+		# signal_hist.DrawNormalized("same")
+
 		legend.Draw()
-		latex.DrawLatex(0.7, 0.7, text)
+		latex.DrawLatex(0.75, 0.73, text)
 		canvas.Update()
-		t = input()
+		t = input()	
 
 		bg_hist = None
 		signal_hist = None
