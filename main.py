@@ -1,12 +1,8 @@
-import uproot
+import os
 import sys
+import uproot
 
-try:
-	import ROOT as root
-except Exception as ex:
-	print("Check if you have ROOT version >= 6.22 installed.")
-	raise ex
-
+import ROOT as root
 import numpy as np
 import pandas as pd
 
@@ -43,15 +39,6 @@ def apply_filters(dataframe, filter_id=None):
 		dataframe = dataframe[dataframe["phCentrality"] < PH_CENT]
 		dataframe = dataframe[dataframe["nJets"] > 1]
 	_len1 = len(dataframe["mJJ"])
-
-	if FILTER == 1:
-		filtername = "Z_gamma region"
-	elif FILTER == 2:
-		filtername = "Signal region"
-	else:
-		filtername = "_"
-	print("Applying {} filter...".format(filtername))
-	print("Dropped {} entries after filtering.\n".format(_len0-_len1))
 	
 	return dataframe.iloc[:, :-2]
 
@@ -87,11 +74,23 @@ def setup_layout(canvas, bg_hist, signal_hist):
 	bg_hist.SetFillColor(2)
 	bg_hist.SetFillStyle(3004)				# устанавливает стиль заливки
 
+	bg_hist.GetXaxis().CenterTitle()
+	bg_hist.GetYaxis().SetTitle("Fraction of events")
+	bg_hist.GetYaxis().CenterTitle()
+	bg_hist.GetXaxis().SetTitleOffset(1.2)
+	bg_hist.SetMinimum(0)
+
 	signal_hist.SetLineWidth(2)
 	signal_hist.SetLineColor(4)
 	signal_hist.SetFillColorAlpha(4, 0.2)	# добавляет прозрачность заливки
-	# 0.72, 0.77, 0.9, 0.9
-	legend=root.TLegend(0.67, 0.77, 0.87, 0.9)	# создаёт объект легенды
+
+	signal_hist.GetXaxis().CenterTitle()
+	signal_hist.GetYaxis().SetTitle("Fraction of events")
+	signal_hist.GetYaxis().CenterTitle()
+	signal_hist.GetXaxis().SetTitleOffset(1.2)
+	signal_hist.SetMinimum(0)	
+
+	legend=root.TLegend(0.70, 0.77, 0.9, 0.9)	# создаёт объект легенды
 	legend.AddEntry(signal_hist,"Signal","f")
 	legend.AddEntry(bg_hist,"Background","f")
 
@@ -117,9 +116,6 @@ def plot(filtered_bg_data, filtered_signal_data):
 	for key in filtered_signal_data.keys():
 		bg_column = filtered_bg_data[key]
 		signal_column = filtered_signal_data[key]
-		print("BG: {} entries.".format(len(bg_column)))
-		print("SIGN: {} entries.".format(len(signal_column)))
-		print("Total: {} entries.".format(len(bg_column) + len(signal_column)))
 
 		xmax = np.max([np.max(bg_column), np.max(signal_column)])
 		xmin = np.min([np.min(bg_column), np.min(signal_column)])
@@ -134,26 +130,16 @@ def plot(filtered_bg_data, filtered_signal_data):
 			bins2 = int(np.max(signal_column))
 
 		canvas = root.TCanvas("canvas", "CANVAS", 1920, 1080)
+
+
 		bg_hist = root.TH1F("", "", bins1, xmin, xmax)
 		bg_hist.GetXaxis().SetTitle(titles[key])
-		bg_hist.GetXaxis().CenterTitle()
-		bg_hist.GetYaxis().SetTitle("Fraction of events")
-		bg_hist.GetYaxis().CenterTitle()
 
 		signal_hist = root.TH1F("", "", bins1, xmin, xmax)
 		signal_hist.GetXaxis().SetTitle(titles[key])
-		signal_hist.GetXaxis().CenterTitle()
-		signal_hist.GetYaxis().SetTitle("Fraction of events")
-		signal_hist.GetYaxis().CenterTitle()
 
-		bg_hist.GetXaxis().SetTitleOffset(1.2)
-		signal_hist.GetXaxis().SetTitleOffset(1.2)
 		
 		canvas, bg_hist, signal_hist, legend, latex = setup_layout(canvas, bg_hist, signal_hist)
-
-		signal_hist.SetMinimum(0)
-		bg_hist.SetMinimum(0)
-
 
 		if key == "mJJ":
 			signal_hist.GetXaxis().SetRangeUser(0, 4000)
@@ -175,6 +161,7 @@ def plot(filtered_bg_data, filtered_signal_data):
 
 		if FILTER == 1:
 			text = "Z_{#gamma} region"
+			filename = "zgamma"
 
 			if key in ("mJJ", "deltaYJJ", "metPt", "subleadJetEta", "leadJetPt", "deltaYJPh"):
 				bg_hist.DrawNormalized("HIST")
@@ -184,6 +171,7 @@ def plot(filtered_bg_data, filtered_signal_data):
 				bg_hist.DrawNormalized("same HIST")	
 		elif FILTER == 2:
 			text = "Signal region"
+			filename = "signal"
 
 			if key in ("mJJ", "deltaYJJ", "metPt", "photonEta", "sinDeltaPhiJJOver2", "deltaYJPh"):
 				bg_hist.DrawNormalized("HIST")
@@ -191,19 +179,30 @@ def plot(filtered_bg_data, filtered_signal_data):
 			else:
 				signal_hist.DrawNormalized("HIST")
 				bg_hist.DrawNormalized("same HIST")
+		else:
+			text = "total"
+			filename = "total"
+
+			signal_hist.DrawNormalized("HIST")
+			bg_hist.DrawNormalized("same HIST")
 
 
 		legend.Draw()
-		latex.DrawLatex(0.67, 0.73, text)
+		latex.DrawLatex(0.7, 0.73, text)
 		canvas.Update()
-		if key == "sinDeltaPhiJJOver2":
-			canvas.Print(key+".png")
 
-			# t = input()	
+		try:
+			os.mkdir(filename)
+		except FileExistsError:
+			pass
+		if SAVEPNG:
+			canvas.Print("./{}/{}.png".format(filename, key))
+		if SHOWHIST:
+			t = input()
 
-		bg_hist = None
-		signal_hist = None
-		canvas = None
+		del bg_hist
+		del signal_hist
+		del canvas
 
 
 if __name__ == "__main__":

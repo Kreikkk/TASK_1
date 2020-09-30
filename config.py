@@ -1,5 +1,5 @@
-SIGNALPROCFNM = "local/ZgEWK.root"
-BGPROCFNM = "local/ZgQCD.root"
+SIGNALPROCFNM = "ZgEWK.root"
+BGPROCFNM = "ZgQCD.root"
 TREENM = "TMVA_input"
 
 
@@ -9,4 +9,7 @@ N_LEP = 0
 
 DEF_BINS = 50
 
-FILTER = 2
+FILTER = 1
+
+SHOWHIST = True
+SAVEPNG = False
