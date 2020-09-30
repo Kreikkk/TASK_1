@@ -65,14 +65,14 @@ def file_read():
 
 
 def setup_layout(canvas, bg_hist, signal_hist):
-	canvas.SetTicks(1, 1)					# добавляет метки на верхнюю и правую оси
+	canvas.SetTicks(1, 1)
 	
-	bg_hist.SetStats(False)					# убирает сводную таблицу
+	bg_hist.SetStats(False)
 	signal_hist.SetStats(False)
 	bg_hist.SetLineWidth(2)	
 	bg_hist.SetLineColor(2)
 	bg_hist.SetFillColor(2)
-	bg_hist.SetFillStyle(3004)				# устанавливает стиль заливки
+	bg_hist.SetFillStyle(3004)
 
 	bg_hist.GetXaxis().CenterTitle()
 	bg_hist.GetYaxis().SetTitle("Fraction of events")
@@ -82,7 +82,7 @@ def setup_layout(canvas, bg_hist, signal_hist):
 
 	signal_hist.SetLineWidth(2)
 	signal_hist.SetLineColor(4)
-	signal_hist.SetFillColorAlpha(4, 0.2)	# добавляет прозрачность заливки
+	signal_hist.SetFillColorAlpha(4, 0.2)
 
 	signal_hist.GetXaxis().CenterTitle()
 	signal_hist.GetYaxis().SetTitle("Fraction of events")
@@ -90,7 +90,7 @@ def setup_layout(canvas, bg_hist, signal_hist):
 	signal_hist.GetXaxis().SetTitleOffset(1.2)
 	signal_hist.SetMinimum(0)	
 
-	legend=root.TLegend(0.70, 0.77, 0.9, 0.9)	# создаёт объект легенды
+	legend=root.TLegend(0.70, 0.77, 0.9, 0.9)
 	legend.AddEntry(signal_hist,"Signal","f")
 	legend.AddEntry(bg_hist,"Background","f")
 
