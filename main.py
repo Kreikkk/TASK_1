@@ -113,7 +113,7 @@ def plot(filtered_bg_data, filtered_signal_data):
 			  "sinDeltaPhiJJOver2": "sin(|#Delta#varphi(j_{1},j_{2})|)",
 			  "deltaYJPh":"#DeltaY(j_{1},#gamma)", "weightModified": ""}
 
-	for key in filtered_signal_data.keys():
+	for key in filtered_signal_data.keys()[:-1]:
 		bg_column = filtered_bg_data[key]
 		signal_column = filtered_signal_data[key]
 
