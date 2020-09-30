@@ -89,9 +89,9 @@ def setup_layout(canvas, bg_hist, signal_hist):
 
 	signal_hist.SetLineWidth(2)
 	signal_hist.SetLineColor(4)
-	signal_hist.SetFillColorAlpha(4, 0.35)	# добавляет прозрачность заливки
-
-	legend=root.TLegend(0.72, 0.77, 0.9, 0.9)	# создаёт объект легенды
+	signal_hist.SetFillColorAlpha(4, 0.2)	# добавляет прозрачность заливки
+	# 0.72, 0.77, 0.9, 0.9
+	legend=root.TLegend(0.67, 0.77, 0.87, 0.9)	# создаёт объект легенды
 	legend.AddEntry(signal_hist,"Signal","f")
 	legend.AddEntry(bg_hist,"Background","f")
 
@@ -103,6 +103,17 @@ def setup_layout(canvas, bg_hist, signal_hist):
 
 
 def plot(filtered_bg_data, filtered_signal_data):
+	print("Вхождения(фон):", len(filtered_bg_data["mJJ"]))
+	print("Вхождения(сигнал):", len(filtered_signal_data["mJJ"]))
+	print("Веса(фон):", np.sum(filtered_bg_data["weightModified"]))
+	print("Веса(сигнал):", np.sum(filtered_signal_data["weightModified"]))
+
+	titles = {"mJJ": "m_{jj}[GeV]", "deltaYJJ": "#DeltaY(j_{1},j_{2})", "metPt": "E^{miss}_{T}[GeV]",
+			  "ptBalance": "p_{T}- balance", "subleadJetEta": "#eta(j_{2})", "leadJetPt": "p_{T}(j_{1})[GeV]",
+			  "photonEta": "#eta(#gamma)", "ptBalanceRed": "p_{T}- balance(reduced)", "nJets": "N_{jets}",
+			  "sinDeltaPhiJJOver2": "sin(|#Delta#varphi(j_{1},j_{2})|)",
+			  "deltaYJPh":"#DeltaY(j_{1},#gamma)", "weightModified": ""}
+
 	for key in filtered_signal_data.keys():
 		bg_column = filtered_bg_data[key]
 		signal_column = filtered_signal_data[key]
@@ -110,60 +121,85 @@ def plot(filtered_bg_data, filtered_signal_data):
 		print("SIGN: {} entries.".format(len(signal_column)))
 		print("Total: {} entries.".format(len(bg_column) + len(signal_column)))
 
-		xlim = np.max([np.max(bg_column), np.max(signal_column)])
-		xzero = 0
-		bins = DEF_BINS
-		xlabel = ""
+		xmax = np.max([np.max(bg_column), np.max(signal_column)])
+		xmin = np.min([np.min(bg_column), np.min(signal_column)])
 
-		if key in ("subleadJetEta", "photonEta"):
-			xzero = -xlim
-		elif key == "nJets":
-			bins = 8
+		if xmin > 0:
+			xmin = 0
 
-		if key in ("mJJ", "metPt", "leadJetPt"):
-			xlabel = "GeV"
+		bins1, bins2 = DEF_BINS, DEF_BINS
 
-		canvas = root.TCanvas("canvas", "CANVAS")
-		canvas.SetTitle(key)
-		bg_hist = root.TH1F("", key, bins, xzero, xlim)
-		bg_hist.GetXaxis().SetTitle(xlabel)
-		signal_hist = root.TH1F("", key, bins, xzero, xlim)
+		if key == "nJets":
+			bins1 = int(np.max(bg_column))
+			bins2 = int(np.max(signal_column))
+
+		canvas = root.TCanvas("canvas", "CANVAS", 1920, 1080)
+		bg_hist = root.TH1F("", "", bins1, xmin, xmax)
+		bg_hist.GetXaxis().SetTitle(titles[key])
+		bg_hist.GetXaxis().CenterTitle()
+		bg_hist.GetYaxis().SetTitle("Fraction of events")
+		bg_hist.GetYaxis().CenterTitle()
+
+		signal_hist = root.TH1F("", "", bins1, xmin, xmax)
+		signal_hist.GetXaxis().SetTitle(titles[key])
+		signal_hist.GetXaxis().CenterTitle()
+		signal_hist.GetYaxis().SetTitle("Fraction of events")
+		signal_hist.GetYaxis().CenterTitle()
+
+		bg_hist.GetXaxis().SetTitleOffset(1.2)
+		signal_hist.GetXaxis().SetTitleOffset(1.2)
 		
 		canvas, bg_hist, signal_hist, legend, latex = setup_layout(canvas, bg_hist, signal_hist)
 
+		signal_hist.SetMinimum(0)
+		bg_hist.SetMinimum(0)
+
+
+		if key == "mJJ":
+			signal_hist.GetXaxis().SetRangeUser(0, 4000)
+			bg_hist.GetXaxis().SetRangeUser(0, 4000)
+		elif key == "metPt":
+			signal_hist.GetXaxis().SetRangeUser(100, 1000)
+			bg_hist.GetXaxis().SetRangeUser(100, 1000)
+		elif key == "ptBalance":
+			signal_hist.GetXaxis().SetRangeUser(0, 0.2)
+			bg_hist.GetXaxis().SetRangeUser(0, 0.2)
+		elif key == "leadJetPt":
+			signal_hist.GetXaxis().SetRangeUser(0, 800)
+			bg_hist.GetXaxis().SetRangeUser(0, 800)
 
 		for bg_value, weight in zip(bg_column, filtered_bg_data["weightModified"]):
-			bg_hist.Fill(bg_value)
+			bg_hist.Fill(bg_value, weight)
 		for signl_value, weight in zip(signal_column, filtered_signal_data["weightModified"]):
-			signal_hist.Fill(signl_value)
+			signal_hist.Fill(signl_value, weight)
 
 		if FILTER == 1:
 			text = "Z_{#gamma} region"
 
-			if key in ("mJJ", "deltaYJJ", "metPt", "subleadJetEta", "leadJetPt", "sinDeltaPhiJJOver2", "deltaYJPh"):
-				bg_hist.DrawNormalized()
-				signal_hist.DrawNormalized("same")
+			if key in ("mJJ", "deltaYJJ", "metPt", "subleadJetEta", "leadJetPt", "deltaYJPh"):
+				bg_hist.DrawNormalized("HIST")
+				signal_hist.DrawNormalized("same HIST")
 			else:
-				signal_hist.DrawNormalized()
-				bg_hist.DrawNormalized("same")	
+				signal_hist.DrawNormalized("HIST")
+				bg_hist.DrawNormalized("same HIST")	
 		elif FILTER == 2:
 			text = "Signal region"
-			if key in ("mJJ", "deltaYJJ", "metPt", "photonEta", "sinDeltaPhiJJOver2", "deltaYJPh"):
-				bg_hist.DrawNormalized()
-				signal_hist.DrawNormalized("same")
-			else:
-				signal_hist.DrawNormalized()
-				bg_hist.DrawNormalized("same")	
-		else:
-			text = ""
 
-		# bg_hist.DrawNormalized()
-		# signal_hist.DrawNormalized("same")
+			if key in ("mJJ", "deltaYJJ", "metPt", "photonEta", "sinDeltaPhiJJOver2", "deltaYJPh"):
+				bg_hist.DrawNormalized("HIST")
+				signal_hist.DrawNormalized("same HIST")
+			else:
+				signal_hist.DrawNormalized("HIST")
+				bg_hist.DrawNormalized("same HIST")
+
 
 		legend.Draw()
-		latex.DrawLatex(0.75, 0.73, text)
+		latex.DrawLatex(0.67, 0.73, text)
 		canvas.Update()
-		t = input()	
+		if key == "sinDeltaPhiJJOver2":
+			canvas.Print(key+".png")
+
+			# t = input()	
 
 		bg_hist = None
 		signal_hist = None
