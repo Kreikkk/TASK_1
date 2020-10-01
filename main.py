@@ -51,11 +51,14 @@ def file_read():
 		print("Check if you've followed the instrucrions in README.")
 		sys.exit()
 
-	signal_trees = [signal_file[TREENM+";1"], signal_file[TREENM+";2"]]
-	bg_trees = [bg_file[TREENM+";10"], bg_file[TREENM+";11"]]
+	# signal_trees = [signal_file[TREENM+";1"], signal_file[TREENM+";2"]]
+	# bg_trees = [bg_file[TREENM+";10"], bg_file[TREENM+";11"]]
 
-	raw_bg_data = pd.concat([assemble_DF(bg_trees[0]), assemble_DF(bg_trees[1])], ignore_index=True)
-	raw_signal_data = pd.concat([assemble_DF(signal_trees[0]), assemble_DF(signal_trees[1])], ignore_index=True)
+	# raw_bg_data = pd.concat([assemble_DF(bg_trees[0]), assemble_DF(bg_trees[1])], ignore_index=True)
+	# raw_signal_data = pd.concat([assemble_DF(signal_trees[0]), assemble_DF(signal_trees[1])], ignore_index=True)
+
+	raw_bg_data = assemble_DF(bg_file[TREENM])
+	raw_signal_data = assemble_DF(signal_file[TREENM])
 
 	filtered_bg_data = apply_filters(raw_bg_data, filter_id=FILTER)
 	filtered_signal_data = apply_filters(raw_signal_data, filter_id=FILTER)
@@ -191,11 +194,12 @@ def plot(filtered_bg_data, filtered_signal_data):
 		latex.DrawLatex(0.7, 0.73, text)
 		canvas.Update()
 
-		try:
-			os.mkdir(filename)
-		except FileExistsError:
-			pass
+
 		if SAVEPNG:
+			try:
+				os.mkdir(filename)
+			except FileExistsError:
+				pass
 			canvas.Print("./{}/{}.png".format(filename, key))
 		if SHOWHIST:
 			t = input()
