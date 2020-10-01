@@ -93,7 +93,8 @@ def setup_layout(canvas, bg_hist, signal_hist):
 	signal_hist.GetXaxis().SetTitleOffset(1.2)
 	signal_hist.SetMinimum(0)	
 
-	legend=root.TLegend(0.70, 0.77, 0.9, 0.9)
+	# legend=root.TLegend(0.70, 0.77, 0.9, 0.9)
+	legend=root.TLegend(0.67, 0.77, 0.87, 0.9)
 	legend.AddEntry(signal_hist,"Signal","f")
 	legend.AddEntry(bg_hist,"Background","f")
 
@@ -115,7 +116,7 @@ def plot(filtered_bg_data, filtered_signal_data):
 			  "photonEta": "#eta(#gamma)", "ptBalanceRed": "p_{T}- balance(reduced)", "nJets": "N_{jets}",
 			  "sinDeltaPhiJJOver2": "sin(|#Delta#varphi(j_{1},j_{2})|)",
 			  "deltaYJPh":"#DeltaY(j_{1},#gamma)", "weightModified": ""}
-
+	filename_counter = 0
 	for key in filtered_signal_data.keys()[:-1]:
 		bg_column = filtered_bg_data[key]
 		signal_column = filtered_signal_data[key]
@@ -191,7 +192,8 @@ def plot(filtered_bg_data, filtered_signal_data):
 
 
 		legend.Draw()
-		latex.DrawLatex(0.7, 0.73, text)
+		# latex.DrawLatex(0.7, 0.73, text)
+		latex.DrawLatex(0.67, 0.73, text)
 		canvas.Update()
 
 
@@ -200,7 +202,8 @@ def plot(filtered_bg_data, filtered_signal_data):
 				os.mkdir(filename)
 			except FileExistsError:
 				pass
-			canvas.Print("./{}/{}.png".format(filename, key))
+			canvas.Print("./{}/{}{}.png".format(filename, filename_counter, key))
+			filename_counter += 1
 		if SHOWHIST:
 			t = input()
 
